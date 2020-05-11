@@ -3,7 +3,7 @@ defmodule Blogr.Repo.Migrations.CreateTags do
 
   def change do
     create table(:tags) do
-      add :name, :string
+      add :name, :string, null: false
 
       timestamps()
     end
