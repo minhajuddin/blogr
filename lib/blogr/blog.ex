@@ -5,6 +5,7 @@ defmodule Blogr.Blog do
 
   import Ecto.Query, warn: false
   alias Blogr.Repo
+  alias Ecto.Multi
 
   alias Blogr.Blog.{Post, Tag}
 
@@ -52,22 +53,41 @@ defmodule Blogr.Blog do
 
   """
   def create_post(attrs \\ %{}) do
+    create_or_update_post(%Post{}, attrs)
+  end
+
+  defp create_or_update_post(post, attrs) do
+    Multi.new()
+    |> ensure_tags(attrs["tags"])
+    |> Multi.run(:post, fn repo, %{find_tags: tags} ->
+      post
+      |> Post.changeset(attrs)
+      |> Ecto.Changeset.put_assoc(:tags, tags)
+      |> repo.insert()
+    end)
+    |> Repo.transaction
+  end
+
+  defp ensure_tags(multi, tags) do
+    now = NaiveDateTime.utc_now |> NaiveDateTime.truncate(:second)
     tags =
-      attrs["tags"]
+      tags
       |> to_string
       |> String.split(",")
       |> Enum.map(fn tag -> String.trim(tag) end)
+      |> Enum.reject(fn tag -> tag == "" end)
       |> Enum.map(fn tag_name ->
-        {:ok, tag} = find_or_create_tag(%{name: tag_name})
-        tag
+        %{name: tag_name, inserted_at: now, updated_at: now}
       end)
 
-
-    %Post{}
-    |> Post.changeset(attrs)
-    |> Ecto.Changeset.put_assoc(:tags, tags)
-    |> Repo.insert()
+    multi
+    |> Multi.insert_all(:insert_tags, Tag, tags, on_conflict: :nothing)
+    |> Multi.run(:find_tags, fn repo, _ ->
+      tag_names = Enum.map(tags, & &1.name )
+      {:ok, repo.all(from t in Tag, where: t.name in ^tag_names)}
+    end)
   end
+
 
   @doc """
   Updates a post.
@@ -82,20 +102,7 @@ defmodule Blogr.Blog do
 
   """
   def update_post(%Post{} = post, attrs) do
-    tags =
-      attrs["tags"]
-      |> to_string
-      |> String.split(",")
-      |> Enum.map(fn tag -> String.trim(tag) end)
-      |> Enum.map(fn tag_name ->
-        {:ok, tag} = find_or_create_tag(%{name: tag_name})
-        tag
-      end)
-
-    post
-    |> Post.changeset(attrs)
-    |> Ecto.Changeset.put_assoc(:tags, tags)
-    |> Repo.update()
+    create_or_update_post(post, attrs)
   end
 
   @doc """
@@ -157,34 +164,6 @@ defmodule Blogr.Blog do
 
   """
   def get_tag!(id), do: Repo.get!(Tag, id)
-
-  @doc """
-  Creates a tag.
-
-  ## Examples
-
-      iex> create_tag(%{field: value})
-      {:ok, %Tag{}}
-
-      iex> create_tag(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_tag(attrs \\ %{}) do
-    %Tag{}
-    |> Tag.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def find_or_create_tag(attrs) do
-    tag = Repo.get_by(Tag, name: attrs[:name] || attrs["name"])
-    if tag do
-      {:ok, tag}
-    else
-      create_tag(attrs) # => {:ok, tag}
-    end
-  end
-
 
   @doc """
   Updates a tag.

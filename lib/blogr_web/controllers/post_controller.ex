@@ -21,7 +21,7 @@ defmodule BlogrWeb.PostController do
         |> put_flash(:info, "Post created successfully.")
         |> redirect(to: Routes.post_path(conn, :show, post))
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, :post, %Ecto.Changeset{} = changeset, _multi_data} ->
         render(conn, "new.html", changeset: changeset)
     end
   end
@@ -46,7 +46,7 @@ defmodule BlogrWeb.PostController do
         |> put_flash(:info, "Post updated successfully.")
         |> redirect(to: Routes.post_path(conn, :show, post))
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, :post, %Ecto.Changeset{} = changeset, _multi_data} ->
         render(conn, "edit.html", post: post, changeset: changeset)
     end
   end
