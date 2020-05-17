@@ -1,5 +1,11 @@
 # Blogr
 
+[Many to Many in ecto - Part 02](https://www.youtube.com/watch?v=_ut8o0fdXRo)
+
+[Many to Many in ecto - Part 01](https://www.youtube.com/watch?v=Cl2U_8XtUBM)
+
+- - -
+
 To start your Phoenix server:
 
   * Setup the project with `mix setup`
