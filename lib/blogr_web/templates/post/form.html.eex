@@ -13,6 +13,10 @@
   <%= textarea f, :body %>
   <%= error_tag f, :body %>
 
+  <%= label f, :tags %>
+  <%= tags_input f %>
+  <%= error_tag f, :tags %>
+
   <div>
     <%= submit "Save" %>
   </div>

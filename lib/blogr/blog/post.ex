@@ -6,6 +6,8 @@ defmodule Blogr.Blog.Post do
     field :body, :string
     field :title, :string
 
+    many_to_many :tags, Blogr.Blog.Tag, join_through: "posts_tags"
+
     timestamps()
   end
 

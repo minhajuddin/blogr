@@ -6,7 +6,7 @@ defmodule Blogr.Blog do
   import Ecto.Query, warn: false
   alias Blogr.Repo
 
-  alias Blogr.Blog.Post
+  alias Blogr.Blog.{Post, Tag}
 
   @doc """
   Returns the list of posts.
@@ -37,6 +37,8 @@ defmodule Blogr.Blog do
   """
   def get_post!(id), do: Repo.get!(Post, id)
 
+  def get_post_with_tags!(id), do: Post |> preload(:tags) |> Repo.get!(id)
+
   @doc """
   Creates a post.
 
@@ -50,8 +52,20 @@ defmodule Blogr.Blog do
 
   """
   def create_post(attrs \\ %{}) do
+    tags =
+      attrs["tags"]
+      |> to_string
+      |> String.split(",")
+      |> Enum.map(fn tag -> String.trim(tag) end)
+      |> Enum.map(fn tag_name ->
+        {:ok, tag} = find_or_create_tag(%{name: tag_name})
+        tag
+      end)
+
+
     %Post{}
     |> Post.changeset(attrs)
+    |> Ecto.Changeset.put_assoc(:tags, tags)
     |> Repo.insert()
   end
 
@@ -68,8 +82,19 @@ defmodule Blogr.Blog do
 
   """
   def update_post(%Post{} = post, attrs) do
+    tags =
+      attrs["tags"]
+      |> to_string
+      |> String.split(",")
+      |> Enum.map(fn tag -> String.trim(tag) end)
+      |> Enum.map(fn tag_name ->
+        {:ok, tag} = find_or_create_tag(%{name: tag_name})
+        tag
+      end)
+
     post
     |> Post.changeset(attrs)
+    |> Ecto.Changeset.put_assoc(:tags, tags)
     |> Repo.update()
   end
 
@@ -150,6 +175,16 @@ defmodule Blogr.Blog do
     |> Tag.changeset(attrs)
     |> Repo.insert()
   end
+
+  def find_or_create_tag(attrs) do
+    tag = Repo.get_by(Tag, name: attrs[:name] || attrs["name"])
+    if tag do
+      {:ok, tag}
+    else
+      create_tag(attrs) # => {:ok, tag}
+    end
+  end
+
 
   @doc """
   Updates a tag.

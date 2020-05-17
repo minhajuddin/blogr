@@ -10,7 +10,7 @@ defmodule BlogrWeb.PostController do
   end
 
   def new(conn, _params) do
-    changeset = Blog.change_post(%Post{})
+    changeset = Blog.change_post(%Post{tags: []})
     render(conn, "new.html", changeset: changeset)
   end
 
@@ -27,18 +27,18 @@ defmodule BlogrWeb.PostController do
   end
 
   def show(conn, %{"id" => id}) do
-    post = Blog.get_post!(id)
+    post = Blog.get_post_with_tags!(id)
     render(conn, "show.html", post: post)
   end
 
   def edit(conn, %{"id" => id}) do
-    post = Blog.get_post!(id)
+    post = Blog.get_post_with_tags!(id)
     changeset = Blog.change_post(post)
     render(conn, "edit.html", post: post, changeset: changeset)
   end
 
   def update(conn, %{"id" => id, "post" => post_params}) do
-    post = Blog.get_post!(id)
+    post = Blog.get_post_with_tags!(id)
 
     case Blog.update_post(post, post_params) do
       {:ok, post} ->
